@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 var cors = require("cors");
 require("dotenv").config();
@@ -53,6 +53,22 @@ async function run() {
       };
 
       const result = await articlesCollection.insertOne(article);
+      res.send(result);
+    });
+
+    // get all articles from articlesCollection
+    app.get("/articles", async (req, res) => {
+      const query = { status: "approved" };
+      const cursor = articlesCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // get single article from articlesCollection by id
+    app.get("/articles/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await articlesCollection.findOne(query);
       res.send(result);
     });
 
