@@ -42,6 +42,11 @@ async function run() {
     // collection one
     const articlesCollection = database.collection("articles");
 
+    // collection two
+    const publishersCollection = database.collection("publishers");
+
+    // articles api start here
+
     // insert a new article in articlesCollection
     app.post("/articles", async (req, res) => {
       const data = req.body;
@@ -69,6 +74,22 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await articlesCollection.findOne(query);
+      res.send(result);
+    });
+
+    // publisher api start here
+
+    // insert a new publishers in publishersCollection
+    app.post("/publishers", async (req, res) => {
+      const data = req.body;
+      const result = await publishersCollection.insertOne(data);
+      res.send(result);
+    });
+
+    // get all publishers from publishersCollection
+    app.get("/publishers", async (req, res) => {
+      const cursor = publishersCollection.find();
+      const result = await cursor.toArray();
       res.send(result);
     });
 
