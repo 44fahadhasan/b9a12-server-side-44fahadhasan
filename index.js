@@ -2,6 +2,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const express = require("express");
 var cors = require("cors");
 require("dotenv").config();
+const jwt = require("jsonwebtoken");
 
 // create express app
 const app = express();
@@ -21,6 +22,29 @@ app.use(
   })
 );
 // express middleware end here
+
+// my middleware start here
+
+const verifyToken = (req, res, next) => {
+  const token = req.headers;
+
+  console.log("token=>", token.authorization);
+
+  if (!token?.authorization) {
+    return res.status(401).send("Unauthorized");
+  }
+
+  const pureToken = token?.authorization?.split(" ")[1];
+
+  jwt.verify(pureToken, process.env.TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "Unauthorized" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+};
+// my middleware end here
 
 // mongodb database code start here
 const uri = `mongodb+srv://${process.env.USER}:${process.env.PASS}@clustercar.wslyx5y.mongodb.net/?retryWrites=true&w=majority&appName=ClusterCar`;
@@ -44,6 +68,19 @@ async function run() {
 
     // collection two
     const publishersCollection = database.collection("publishers");
+
+    // security api start here
+
+    // when user login success active this api for security purpose
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.TOKEN_SECRET, {
+        expiresIn: "365d",
+      });
+      res.send({ token });
+    });
+
+    // security api end here
 
     // articles api start here
 
@@ -87,8 +124,12 @@ async function run() {
     });
 
     // get all publishers from publishersCollection
-    app.get("/publishers", async (req, res) => {
-      const cursor = publishersCollection.find();
+    app.get("/publishers", verifyToken, async (req, res) => {
+      const query = {};
+      const options = {
+        projection: { _id: 0, name: 1, image: 1 },
+      };
+      const cursor = publishersCollection.find(query, options);
       const result = await cursor.toArray();
       res.send(result);
     });
