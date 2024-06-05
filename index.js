@@ -297,6 +297,21 @@ async function run() {
       res.send(result);
     });
 
+    // get all trending(most views) articles from articlesCollection
+    app.get("/trending-articles", async (req, res) => {
+      const query = {
+        viewCount: { $gt: 0 },
+      };
+      const options = {
+        sort: { viewCount: -1 },
+        projection: { image: 1, title: 1, time: 1 },
+      };
+      const cursor = articlesCollection.find(query, options).limit(6);
+      const result = await cursor.toArray();
+
+      res.send(result);
+    });
+
     // publisher api start here
 
     // insert a new publishers in publishersCollection
