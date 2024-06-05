@@ -28,8 +28,6 @@ app.use(
 const verifyToken = (req, res, next) => {
   const token = req.headers;
 
-  console.log("token=>", token.authorization);
-
   if (!token?.authorization) {
     return res.status(401).send("Unauthorized");
   }
@@ -69,6 +67,9 @@ async function run() {
     // collection two
     const publishersCollection = database.collection("publishers");
 
+    // collection three
+    const usersCollection = database.collection("users");
+
     // security api start here
 
     // when user login success active this api for security purpose
@@ -81,6 +82,28 @@ async function run() {
     });
 
     // security api end here
+
+    // user api start here
+
+    // user data save to usersCollection
+    app.post("/users", async (req, res) => {
+      const userData = req.body;
+
+      //  is user already available in usersCollection checking
+      const query = { email: userData?.email };
+      const isAvailable = await usersCollection.findOne(query);
+      if (isAvailable) {
+        return res.send({
+          message: "The user is already available in db",
+        });
+      }
+
+      // when user is null in usersCollection then insert user data
+      const result = await usersCollection.insertOne(userData);
+      res.send(result);
+    });
+
+    // user api end here
 
     // articles api start here
 
