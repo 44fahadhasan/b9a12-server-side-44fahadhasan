@@ -134,7 +134,7 @@ async function run() {
       res.send(result);
     });
 
-    // get all users for admin from usersCollection
+    // get all users data for admin from usersCollection
     app.get("/users-admin", verifyToken, verifyAdmin, async (req, res) => {
       const query = {};
       const options = {
@@ -171,18 +171,33 @@ async function run() {
     app.post("/articles", async (req, res) => {
       const data = req.body;
 
-      const article = {
+      const newArticle = {
         ...data,
         status: "pending",
         time: Date.now(),
       };
 
-      const result = await articlesCollection.insertOne(article);
+      const result = await articlesCollection.insertOne(newArticle);
       res.send(result);
     });
 
-    // get all articles from articlesCollection
-    app.get("/articles", async (req, res) => {
+    // get all articles data from articlesCollection (admin only)
+    app.get("/articles", verifyToken, verifyAdmin, async (req, res) => {
+      const cursor = articlesCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // single article delele from articlesCollection by article id (admin only)
+    app.delete("/articles/:id", verifyToken, verifyAdmin, async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await articlesCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // get all approved articles from articlesCollection
+    app.get("/approved-articles", async (req, res) => {
       const query = { status: "approved" };
       const cursor = articlesCollection.find(query);
       const result = await cursor.toArray();
@@ -207,7 +222,7 @@ async function run() {
     });
 
     // get all publishers from publishersCollection
-    app.get("/publishers", verifyToken, async (req, res) => {
+    app.get("/publishers", async (req, res) => {
       const query = {};
       const options = {
         projection: { _id: 0, name: 1, image: 1 },
