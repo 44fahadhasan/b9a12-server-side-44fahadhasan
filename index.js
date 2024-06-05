@@ -116,7 +116,7 @@ async function run() {
       const userSaveData = {
         ...userData,
         role: "User",
-        Premium: false,
+        premium: false,
         time: Date.now(),
       };
 
@@ -162,6 +162,24 @@ async function run() {
         res.send(result);
       }
     );
+
+    // user count in usersCollection
+    app.get("/user-statistics", async (req, res) => {
+      // all user count
+      const allUser = await usersCollection.countDocuments();
+
+      // normal user count
+      const normalUser = await usersCollection.countDocuments({
+        premium: false,
+      });
+
+      // premium  user count
+      const premiumUser = await usersCollection.countDocuments({
+        premium: true,
+      });
+
+      res.send({ allUser, normalUser, premiumUser });
+    });
 
     // user api end here
 
