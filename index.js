@@ -188,6 +188,32 @@ async function run() {
       res.send(result);
     });
 
+    // single article make premium in articlesCollection by article id (admin only)
+    app.put("/articles/:id", verifyToken, verifyAdmin, async (req, res) => {
+      const { id } = req.params;
+      const filter = { _id: new ObjectId(id) };
+      const updatePremium = {
+        $set: {
+          isPremium: true,
+        },
+      };
+      const result = await articlesCollection.updateOne(filter, updatePremium);
+      res.send(result);
+    });
+
+    // single article update for status in articlesCollection by article id (admin only)
+    app.patch("/articles/:id", verifyToken, verifyAdmin, async (req, res) => {
+      const { id } = req.params;
+      const filter = { _id: new ObjectId(id) };
+      const updateStatus = {
+        $set: {
+          status: "approved",
+        },
+      };
+      const result = await articlesCollection.updateOne(filter, updateStatus);
+      res.send(result);
+    });
+
     // single article delele from articlesCollection by article id (admin only)
     app.delete("/articles/:id", verifyToken, verifyAdmin, async (req, res) => {
       const { id } = req.params;
