@@ -274,6 +274,29 @@ async function run() {
       res.send(result);
     });
 
+    // single article view count increment in articlesCollection
+    app.put("/article-count/:id", async (req, res) => {
+      const countData = req.body;
+      const { id } = req.params;
+
+      const query = { _id: new ObjectId(id) };
+      const options = {
+        projection: { _id: 0, viewCount: 1 },
+      };
+      const latestCountData = await articlesCollection.findOne(query, options);
+
+      const filter = { _id: new ObjectId(id) };
+      const updateCount = {
+        $set: {
+          viewCount: countData?.count + latestCountData?.viewCount,
+        },
+      };
+
+      const result = await articlesCollection.updateOne(filter, updateCount);
+
+      res.send(result);
+    });
+
     // publisher api start here
 
     // insert a new publishers in publishersCollection
