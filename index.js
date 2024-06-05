@@ -134,7 +134,7 @@ async function run() {
       res.send(result);
     });
 
-    // get all users data for admin from usersCollection
+    // get all users data from usersCollection(admin only)
     app.get("/users-admin", verifyToken, verifyAdmin, async (req, res) => {
       const query = {};
       const options = {
@@ -162,6 +162,24 @@ async function run() {
         res.send(result);
       }
     );
+
+    // get specific users data from usersCollection(logged only)
+    app.get("/user/:email", verifyToken, async (req, res) => {
+      const { email } = req?.params;
+
+      // data provide only valided user verify with token and email start here
+      if (req?.decoded?.email !== email) {
+        return res.status(403).send("Forbidden");
+      }
+      // data provide only valided user verify with token  adn email end here
+
+      const query = { email: email };
+      const options = {
+        projection: { _id: 0, role: 1, premium: 1 },
+      };
+      const result = await usersCollection.findOne(query, options);
+      res.send(result);
+    });
 
     // user count in usersCollection
     app.get("/user-statistics", async (req, res) => {
