@@ -25,6 +25,7 @@ app.use(
 
 // my middleware start here
 
+// token validaton of logged user
 const verifyToken = (req, res, next) => {
   const token = req.headers;
 
@@ -70,6 +71,29 @@ async function run() {
     // collection three
     const usersCollection = database.collection("users");
 
+    // my middleware start here
+
+    // checking user is admin
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+
+      const query = {
+        email: email,
+      };
+      const options = {
+        projection: { _id: 0, role: 1 },
+      };
+      const user = await usersCollection.findOne(query, options);
+
+      if (user?.role === "Admin") {
+        next();
+      } else {
+        return res.status(403).send({ message: "Forbidden" });
+      }
+    };
+
+    // my middleware end here
+
     // security api start here
 
     // when user login success active this api for security purpose
@@ -85,9 +109,16 @@ async function run() {
 
     // user api start here
 
-    // user data save to usersCollection
+    // new user data save to usersCollection
     app.post("/users", async (req, res) => {
       const userData = req.body;
+
+      const userSaveData = {
+        ...userData,
+        role: "User",
+        Premium: false,
+        time: Date.now(),
+      };
 
       //  is user already available in usersCollection checking
       const query = { email: userData?.email };
@@ -99,9 +130,38 @@ async function run() {
       }
 
       // when user is null in usersCollection then insert user data
-      const result = await usersCollection.insertOne(userData);
+      const result = await usersCollection.insertOne(userSaveData);
       res.send(result);
     });
+
+    // get all users for admin from usersCollection
+    app.get("/users-admin", verifyToken, verifyAdmin, async (req, res) => {
+      const query = {};
+      const options = {
+        projection: { email: 1, name: 1, image: 1, role: 1 },
+      };
+      const cursor = usersCollection.find(query, options);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // user role status update in usersCollection (admin only)
+    app.patch(
+      "/users-admin/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const { id } = req.params;
+        const filter = { _id: new ObjectId(id) };
+        const updateRole = {
+          $set: {
+            role: "Admin",
+          },
+        };
+        const result = await usersCollection.updateOne(filter, updateRole);
+        res.send(result);
+      }
+    );
 
     // user api end here
 
