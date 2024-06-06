@@ -312,6 +312,28 @@ async function run() {
       res.send(result);
     });
 
+    // get all premium articles data from articlesCollection (premium only)
+    app.get("/premium-articles", verifyToken, async (req, res) => {
+      const email = req?.headers?.email;
+
+      // verify the current user is premium start here
+      const { premium } = await usersCollection.findOne(
+        { email: email },
+        { projection: { _id: 0, premium: 1 } }
+      );
+      if (!premium) return res.status(401).send({ message: "Forbidden" });
+      // verify the current user is premium end here
+
+      const query = { isPremium: true };
+      const options = {
+        projection: { image: 1, title: 1, publisher: 1, description: 1 },
+      };
+
+      const cursor = articlesCollection.find(query, options);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     // publisher api start here
 
     // insert a new publishers in publishersCollection
