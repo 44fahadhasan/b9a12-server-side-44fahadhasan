@@ -238,7 +238,30 @@ async function run() {
       res.send(result);
     });
 
-    // single article update for status in articlesCollection by article id (admin only)
+    // single article update for status decline in articlesCollection by article id (admin only)
+    app.put(
+      "/article-decline/:id",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        const { id } = req.params;
+        const { declineReason } = req.body;
+        const filter = { _id: new ObjectId(id) };
+        const updateDeclined = {
+          $set: {
+            declined: true,
+            declinedText: declineReason,
+          },
+        };
+        const result = await articlesCollection.updateOne(
+          filter,
+          updateDeclined
+        );
+        res.send(result);
+      }
+    );
+
+    // single article update for status approved in articlesCollection by article id (admin only)
     app.patch("/articles/:id", verifyToken, verifyAdmin, async (req, res) => {
       const { id } = req.params;
       const filter = { _id: new ObjectId(id) };
