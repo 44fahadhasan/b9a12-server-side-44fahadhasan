@@ -211,6 +211,7 @@ async function run() {
         ...data,
         status: "pending",
         time: Date.now(),
+        viewCount: 0,
       };
 
       const result = await articlesCollection.insertOne(newArticle);
@@ -304,7 +305,7 @@ async function run() {
       };
       const options = {
         sort: { viewCount: -1 },
-        projection: { image: 1, title: 1, time: 1 },
+        projection: { image: 1, title: 1, time: 1, isPremium: 1 },
       };
       const cursor = articlesCollection.find(query, options).limit(6);
       const result = await cursor.toArray();
