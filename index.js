@@ -381,6 +381,21 @@ async function run() {
       res.send(result);
     });
 
+    // update a single article of current user from articlesCollection
+    app.patch("/my-articles/:id", verifyToken, async (req, res) => {
+      const updateData = req.body;
+      const { id } = req.params;
+
+      const filter = { _id: new ObjectId(id) };
+      const updateArticle = {
+        $set: {
+          ...updateData,
+        },
+      };
+      const result = await articlesCollection.updateOne(filter, updateArticle);
+      res.send(result);
+    });
+
     // single my article delele from articlesCollection by article id
     app.delete("/my-articles/:id", verifyToken, async (req, res) => {
       const { id } = req.params;
