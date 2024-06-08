@@ -381,6 +381,14 @@ async function run() {
       res.send(result);
     });
 
+    // single my article delele from articlesCollection by article id
+    app.delete("/my-articles/:id", verifyToken, async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const result = await articlesCollection.deleteOne(query);
+      res.send(result);
+    });
+
     // publisher api start here
 
     // insert a new publishers in publishersCollection
