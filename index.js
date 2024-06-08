@@ -424,6 +424,34 @@ async function run() {
       res.send(result);
     });
 
+    // publisher Statistics api (admin only)
+    app.get(
+      "/publishers-statistics",
+      verifyToken,
+      verifyAdmin,
+      async (req, res) => {
+        //
+        const publishersData = await articlesCollection
+          .find({}, { projection: { _id: 0, publisher: 1 } })
+          .toArray();
+
+        //
+        const publisherCountsData = {};
+
+        publishersData.forEach((value) => {
+          if (value?.publisher) {
+            if (!publisherCountsData[value?.publisher]) {
+              // dynamic publisher name and value generate
+              publisherCountsData[value?.publisher] = 0;
+            }
+            publisherCountsData[value?.publisher]++;
+          }
+        });
+
+        res.send(publisherCountsData);
+      }
+    );
+
     // clear code last time start here
     await client.connect();
     await client.db("admin").command({ ping: 1 });
