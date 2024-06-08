@@ -220,7 +220,7 @@ async function run() {
 
     // get all articles data from articlesCollection (admin only)
     app.get("/articles", verifyToken, verifyAdmin, async (req, res) => {
-      const cursor = articlesCollection.find();
+      const cursor = articlesCollection.find({}, { sort: { status: -1 } });
       const result = await cursor.toArray();
       res.send(result);
     });
@@ -249,7 +249,7 @@ async function run() {
         const filter = { _id: new ObjectId(id) };
         const updateDeclined = {
           $set: {
-            declined: true,
+            status: "declined",
             declinedText: declineReason,
           },
         };
@@ -351,6 +351,29 @@ async function run() {
       const query = { isPremium: true };
       const options = {
         projection: { image: 1, title: 1, publisher: 1, description: 1 },
+      };
+
+      const cursor = articlesCollection.find(query, options);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // get all articles data of current user from articlesCollection
+    app.get("/my-articles", verifyToken, async (req, res) => {
+      const requestUserEmail = req?.headers?.email;
+      const currentLoginUserEamil = req?.decoded?.email;
+
+      // verify the current user start here
+
+      if (currentLoginUserEamil !== requestUserEmail)
+        return res.status(401).send({ message: "Forbidden" });
+      // verify the current user end here
+
+      const query = { "author.email": requestUserEmail };
+
+      const options = {
+        sort: { status: -1 },
+        projection: { title: 1, status: 1, isPremium: 1, declinedText: 1 },
       };
 
       const cursor = articlesCollection.find(query, options);
