@@ -337,23 +337,41 @@ async function run() {
       res.send(result);
     });
 
-    // get all approved popular articles from articlesCollection
+    // get all approved popular not premium articles from articlesCollection
     app.get("/popular-articles", async (req, res) => {
-      const query = { status: "approved", tag: "Popular" };
+      const query = {
+        status: "approved",
+        tag: "Popular",
+        isPremium: { $exists: null },
+      };
+
       const cursor = articlesCollection.find(query).limit(5);
       const result = await cursor.toArray();
       res.send(result);
     });
 
-    // get all approved recent articles from articlesCollection
+    // get all approved recent not premium articles from articlesCollection
     app.get("/recent-articles", async (req, res) => {
-      const query = { status: "approved" };
+      const query = { status: "approved", isPremium: { $exists: null } };
       const options = {
         sort: { time: 1 },
         projection: { title: 1, time: 1, image: 1 },
       };
 
       const cursor = articlesCollection.find(query, options).limit(4);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // get all approved oldest not premium articles from articlesCollection
+    app.get("/oldest-articles", async (req, res) => {
+      const query = { status: "approved", isPremium: { $exists: null } };
+      const options = {
+        sort: { time: 1 },
+        projection: { title: 1, time: 1, image: 1, isPremium: 1 },
+      };
+
+      const cursor = articlesCollection.find(query, options).limit(6);
       const result = await cursor.toArray();
       res.send(result);
     });
