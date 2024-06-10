@@ -140,13 +140,23 @@ async function run() {
 
     // get all users data from usersCollection(admin only)
     app.get("/users-admin", verifyToken, verifyAdmin, async (req, res) => {
+      const size = parseInt(req.query.limit) || 9;
+      const offset = parseInt(req.query.offset) || 0;
+
       const query = {};
       const options = {
         projection: { email: 1, name: 1, image: 1, role: 1 },
       };
-      const cursor = usersCollection.find(query, options);
+
+      const cursor = usersCollection
+        .find(query, options)
+        .skip(offset)
+        .limit(size);
+
       const result = await cursor.toArray();
-      res.send(result);
+      const countUsers = await usersCollection.countDocuments();
+
+      res.send({ result, countUsers });
     });
 
     // user role status update in usersCollection (admin only)
@@ -518,11 +528,11 @@ async function run() {
     );
 
     // clear code last time start here
-    await client.connect();
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.connect();
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
     // clear code last time end  here
   } finally {
     // code
