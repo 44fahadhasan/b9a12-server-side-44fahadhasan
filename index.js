@@ -367,8 +367,8 @@ async function run() {
     app.get("/oldest-articles", async (req, res) => {
       const query = { status: "approved", isPremium: { $exists: null } };
       const options = {
-        sort: { time: 1 },
-        projection: { title: 1, time: 1, image: 1, isPremium: 1 },
+        sort: { time: -1 },
+        projection: { title: 1, time: 1, image: 1, description: 1 },
       };
 
       const cursor = articlesCollection.find(query, options).limit(6);
