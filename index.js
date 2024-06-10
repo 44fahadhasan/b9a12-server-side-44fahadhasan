@@ -3,6 +3,7 @@ const express = require("express");
 var cors = require("cors");
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.STRIPE_KEY);
 
 // create express app
 const app = express();
@@ -74,6 +75,28 @@ async function run() {
     // collection three
     const feedbacksCollection = database.collection("feedbacks");
 
+    // payment api start here
+
+    const calculateSubscriptionAmount = (price) => {
+      return Number(price) * 100;
+    };
+
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req?.body;
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: calculateSubscriptionAmount(price),
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+
+      res.send({
+        clientSecret: paymentIntent?.client_secret,
+      });
+    });
+
+    // payment api end here
+
     // my middleware start here
 
     // checking user is admin
@@ -120,7 +143,7 @@ async function run() {
         ...userData,
         role: "User",
         premium: false,
-        subscriptionPeriodTime: 0,
+        subscriptionPeriodEdnTime: 0,
         time: Date.now(),
       };
 
@@ -135,6 +158,21 @@ async function run() {
 
       // when user is null in usersCollection then insert user data
       const result = await usersCollection.insertOne(userSaveData);
+      res.send(result);
+    });
+
+    // user make premium in usersCollection (when payment succeeded)
+    app.patch("/make-user-premium", verifyToken, async (req, res) => {
+      const { subcsubscriptionEndTime, email } = req?.body;
+
+      const filter = { email: email };
+      const updateData = {
+        $set: {
+          premium: true,
+          subscriptionPeriodEdnTime: subcsubscriptionEndTime,
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateData);
       res.send(result);
     });
 
