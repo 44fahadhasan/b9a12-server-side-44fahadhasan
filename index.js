@@ -71,6 +71,9 @@ async function run() {
     // collection three
     const usersCollection = database.collection("users");
 
+    // collection three
+    const feedbacksCollection = database.collection("feedbacks");
+
     // my middleware start here
 
     // checking user is admin
@@ -117,6 +120,7 @@ async function run() {
         ...userData,
         role: "User",
         premium: false,
+        subscriptionPeriodTime: 0,
         time: Date.now(),
       };
 
@@ -207,6 +211,30 @@ async function run() {
     app.post("/articles", async (req, res) => {
       const data = req.body;
 
+      // check post creator is premium or normal user
+      const creatorEmail = req?.body?.author?.email;
+      const { premium } = await usersCollection.findOne(
+        { email: creatorEmail },
+        {
+          projection: { _id: 0, premium: 1 },
+        }
+      );
+
+      // check avilable articles of noramal user
+      if (!premium) {
+        const query = { "author.email": creatorEmail };
+        const countAvilableArticles = await articlesCollection.countDocuments(
+          query
+        );
+
+        if (countAvilableArticles > 0) {
+          return res.send({
+            message: "Normal users can only publish 1 article",
+          });
+        }
+      }
+      // check avilable articles of noramal user end
+
       const newArticle = {
         ...data,
         status: "pending",
@@ -220,9 +248,18 @@ async function run() {
 
     // get all articles data from articlesCollection (admin only)
     app.get("/articles", verifyToken, verifyAdmin, async (req, res) => {
-      const cursor = articlesCollection.find({}, { sort: { status: -1 } });
+      const size = parseInt(req.query.limit) || 9;
+      const offset = parseInt(req.query.offset) || 0;
+
+      const cursor = articlesCollection
+        .find({}, { sort: { status: -1 } })
+        .skip(offset)
+        .limit(size);
+
       const result = await cursor.toArray();
-      res.send(result);
+      const countArticles = await articlesCollection.countDocuments();
+
+      res.send({ result, countArticles });
     });
 
     // single article make premium in articlesCollection by article id (admin only)
@@ -286,6 +323,27 @@ async function run() {
     app.get("/approved-articles", async (req, res) => {
       const query = { status: "approved" };
       const cursor = articlesCollection.find(query);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // get all approved popular articles from articlesCollection
+    app.get("/popular-articles", async (req, res) => {
+      const query = { status: "approved", tag: "Popular" };
+      const cursor = articlesCollection.find(query).limit(5);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // get all approved recent articles from articlesCollection
+    app.get("/recent-articles", async (req, res) => {
+      const query = { status: "approved" };
+      const options = {
+        sort: { time: 1 },
+        projection: { title: 1, time: 1, image: 1 },
+      };
+
+      const cursor = articlesCollection.find(query, options).limit(4);
       const result = await cursor.toArray();
       res.send(result);
     });
@@ -420,6 +478,13 @@ async function run() {
         projection: { _id: 0, name: 1, image: 1 },
       };
       const cursor = publishersCollection.find(query, options);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
+    // get all feedback from api
+    app.get("/feedbacks", async (req, res) => {
+      const cursor = feedbacksCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
