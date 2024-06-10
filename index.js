@@ -176,6 +176,44 @@ async function run() {
       res.send(result);
     });
 
+    // when user login then checking premium status usersCollection
+    app.post("/premium-check", verifyToken, async (req, res) => {
+      const { email } = req?.body;
+
+      const query = { email: email };
+
+      const options = {
+        projection: { _id: 0, premium: 1, subscriptionPeriodEdnTime: 1 },
+      };
+
+      const { premium, subscriptionPeriodEdnTime } =
+        await usersCollection.findOne(query, options);
+
+      //
+
+      const currentTime = new Date().getTime();
+      const endTime = subscriptionPeriodEdnTime;
+
+      if (premium) {
+        if (endTime < currentTime) {
+          //
+          const filter = { email: email };
+          const updateData = {
+            $set: {
+              premium: false,
+              subscriptionPeriodEdnTime: 0,
+            },
+          };
+          const result = await usersCollection.updateOne(filter, updateData);
+
+          res.send(result);
+          //
+        }
+      }
+
+      //
+    });
+
     // get all users data from usersCollection(admin only)
     app.get("/users-admin", verifyToken, verifyAdmin, async (req, res) => {
       const size = parseInt(req.query.limit) || 9;
