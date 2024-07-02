@@ -487,6 +487,7 @@ async function run() {
     app.get("/trending-articles", async (req, res) => {
       const query = {
         viewCount: { $gt: 0 },
+        status: "approved",
       };
       const options = {
         sort: { viewCount: -1 },
